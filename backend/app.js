@@ -1,24 +1,31 @@
 var app = require('express')();
 var cors = require('cors')
-var MongoClient = require('mongodb').MongoClient;
-
-function connect(callback){
-    MongoClient.connect('mongodb://127.0.0.1:27017/medical?useNewUrlParser=true', (err, db) => {
-        if(!err) {
-            console.log("We are connected");
-            }
-        DB = db.db('medical');
-        callback(DB);
-        
-    });
-}
-
+var DB = require('./model/db');
+var ObjectID = require('mongodb').ObjectID;
 
 
 app.get('/',function(req,res){
-    connect(DB=>{
-        const cursor = DB.collection('company').find().toArray((e,r)=>{
-            res.json(r);
+    res.json({resp:'Rota não encontrada'});
+})
+
+app.get('/:collection/:id?/:field?',function(req,res){
+    console.log(req.params);
+    var find = {};
+    var field = req.param.field;
+    var id = req.param.id;
+    if(field){
+        find = {
+            $regex : {
+                id : field
+            }
+        }
+    } else if(id){
+        find = { _id : ObjectID(id) }
+    }
+
+    DB.connect(DB=>{
+        const cursor = DB.collection(req.params.collection).find(find).toArray((e,r)=>{
+            res.json(r);//$regex
         });
     });
 })
